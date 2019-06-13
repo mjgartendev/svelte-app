@@ -35,7 +35,9 @@ import {onMount} from 'svelte';
 	links={pages}/>
 
 <main id="main" class="flex-center round">
-	<svelte:component this={active.component}></svelte:component>
+	{#if active.component}
+		<svelte:component this={active.component}></svelte:component>
+	{/if}
 </main>
 
 <Footer></Footer>

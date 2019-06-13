@@ -10,21 +10,17 @@
   {/each}
 </aside>
 {/if}
-<svelte:window on:load={handleLoad} on:popstate|preventDefault={handlePopstate}/>
+<svelte:window on:popstate={handlePopstate}/>
 <script>
   export let mini = true;
   export let show = true;
   export let links;
   export let active;
   $: {
-    console.log(active)
     self.history.pushState({}, active.name, active.to)
   }
-  function handleLoad(e){
-    active = links.find(l => l.to == e.path[0].location.pathname)
-  }
   function handlePopstate(e){
-    active = links.find(l => l.to == e.state)
+    active = links.find(l => l.to == e.path[0].location.pathname)
   }
 </script>
 

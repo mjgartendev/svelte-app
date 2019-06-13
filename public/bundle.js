@@ -697,10 +697,7 @@ var app = (function () {
     		c: function create() {
     			if (if_block) if_block.c();
     			if_block_anchor = empty();
-    			dispose = [
-    				listen(window, "load", ctx.handleLoad),
-    				listen(window, "popstate", prevent_default(ctx.handlePopstate))
-    			];
+    			dispose = listen(window, "popstate", ctx.handlePopstate);
     		},
 
     		l: function claim(nodes) {
@@ -737,18 +734,15 @@ var app = (function () {
     				detach(if_block_anchor);
     			}
 
-    			run_all(dispose);
+    			dispose();
     		}
     	};
     }
 
     function instance$1($$self, $$props, $$invalidate) {
     	let { mini = true, show = true, links, active } = $$props;
-      function handleLoad(e){
-        $$invalidate('active', active = links.find(l => l.to == e.path[0].location.pathname));
-      }
       function handlePopstate(e){
-        $$invalidate('active', active = links.find(l => l.to == e.state));
+        $$invalidate('active', active = links.find(l => l.to == e.path[0].location.pathname));
       }
 
     	const writable_props = ['mini', 'show', 'links', 'active'];
@@ -771,7 +765,6 @@ var app = (function () {
 
     	$$self.$$.update = ($$dirty = { active: 1 }) => {
     		if ($$dirty.active) { {
-            console.log(active);
             self.history.pushState({}, active.name, active.to);
           } }
     	};
@@ -781,7 +774,6 @@ var app = (function () {
     		show,
     		links,
     		active,
-    		handleLoad,
     		handlePopstate,
     		click_handler
     	};
@@ -850,7 +842,7 @@ var app = (function () {
     			footer = element("footer");
 
     			if (!default_slot) {
-    				t = text("© 2019  Michael Garten \n    ");
+    				t = text("© 2019  mjgartendev \n    ");
     				a = element("a");
     				span = element("span");
     			}
@@ -858,11 +850,11 @@ var app = (function () {
     			if (default_slot) default_slot.c();
     			if (!default_slot) {
     				span.className = "fg-dark fab fa-github";
-    				add_location(span, file$2, 4, 6, 194);
-    				a.href = "https://www.github.com/mjgartendev/template";
+    				add_location(span, file$2, 4, 6, 193);
+    				a.href = "https://www.github.com/mjgartendev/svelte-app";
     				a.target = "_blank";
     				a.rel = "noreferrer";
-    				add_location(a, file$2, 3, 4, 100);
+    				add_location(a, file$2, 3, 4, 97);
     			}
 
     			footer.id = "btm";
@@ -1152,7 +1144,7 @@ var app = (function () {
 
     const file$8 = "src\\App.svelte";
 
-    // (25:2) {:else}
+    // (24:2) {:else}
     function create_else_block(ctx) {
     	var span, dispose;
 
@@ -1160,7 +1152,7 @@ var app = (function () {
     		c: function create() {
     			span = element("span");
     			span.className = "fas fa-angle-left";
-    			add_location(span, file$8, 25, 3, 615);
+    			add_location(span, file$8, 24, 3, 614);
     			dispose = listen(span, "click", ctx.click_handler_2);
     		},
 
@@ -1178,15 +1170,15 @@ var app = (function () {
     	};
     }
 
-    // (23:2) {#if sidebarMini}
-    function create_if_block$1(ctx) {
+    // (22:2) {#if sidebarMini}
+    function create_if_block_1$1(ctx) {
     	var span, dispose;
 
     	return {
     		c: function create() {
     			span = element("span");
     			span.className = "fas fa-angle-right";
-    			add_location(span, file$8, 23, 3, 524);
+    			add_location(span, file$8, 22, 3, 523);
     			dispose = listen(span, "click", ctx.click_handler_1);
     		},
 
@@ -1204,12 +1196,12 @@ var app = (function () {
     	};
     }
 
-    // (15:0) <Navbar   items={[   {name: "home", to: "."},   {name: "docs", to: "docs"},   {name: "blog", to: "blog"} ]}>
+    // (14:0) <Navbar   items={[   {name: "home", to: "."},   {name: "docs", to: "docs"},   {name: "blog", to: "blog"} ]}>
     function create_default_slot(ctx) {
     	var div, span0, t0, t1, span1, dispose;
 
     	function select_block_type(ctx) {
-    		if (ctx.sidebarMini) return create_if_block$1;
+    		if (ctx.sidebarMini) return create_if_block_1$1;
     		return create_else_block;
     	}
 
@@ -1226,9 +1218,9 @@ var app = (function () {
     			span1 = element("span");
     			span1.textContent = "Svelte Template";
     			span0.className = "fas fa-bars";
-    			add_location(span0, file$8, 21, 2, 424);
-    			add_location(div, file$8, 20, 1, 416);
-    			add_location(span1, file$8, 28, 1, 708);
+    			add_location(span0, file$8, 20, 2, 423);
+    			add_location(div, file$8, 19, 1, 415);
+    			add_location(span1, file$8, 27, 1, 707);
     			dispose = listen(span0, "click", ctx.click_handler);
     		},
 
@@ -1269,6 +1261,81 @@ var app = (function () {
     	};
     }
 
+    // (38:1) {#if active.component}
+    function create_if_block$1(ctx) {
+    	var switch_instance_anchor, current;
+
+    	var switch_value = ctx.active.component;
+
+    	function switch_props(ctx) {
+    		return { $$inline: true };
+    	}
+
+    	if (switch_value) {
+    		var switch_instance = new switch_value(switch_props());
+    	}
+
+    	return {
+    		c: function create() {
+    			if (switch_instance) switch_instance.$$.fragment.c();
+    			switch_instance_anchor = empty();
+    		},
+
+    		m: function mount(target, anchor) {
+    			if (switch_instance) {
+    				mount_component(switch_instance, target, anchor);
+    			}
+
+    			insert(target, switch_instance_anchor, anchor);
+    			current = true;
+    		},
+
+    		p: function update(changed, ctx) {
+    			if (switch_value !== (switch_value = ctx.active.component)) {
+    				if (switch_instance) {
+    					group_outros();
+    					const old_component = switch_instance;
+    					on_outro(() => {
+    						old_component.$destroy();
+    					});
+    					old_component.$$.fragment.o(1);
+    					check_outros();
+    				}
+
+    				if (switch_value) {
+    					switch_instance = new switch_value(switch_props());
+
+    					switch_instance.$$.fragment.c();
+    					switch_instance.$$.fragment.i(1);
+    					mount_component(switch_instance, switch_instance_anchor.parentNode, switch_instance_anchor);
+    				} else {
+    					switch_instance = null;
+    				}
+    			}
+    		},
+
+    		i: function intro(local) {
+    			if (current) return;
+    			if (switch_instance) switch_instance.$$.fragment.i(local);
+
+    			current = true;
+    		},
+
+    		o: function outro(local) {
+    			if (switch_instance) switch_instance.$$.fragment.o(local);
+    			current = false;
+    		},
+
+    		d: function destroy(detaching) {
+    			if (detaching) {
+    				detach(switch_instance_anchor);
+    			}
+
+    			if (switch_instance) switch_instance.$destroy(detaching);
+    		}
+    	};
+    }
+
     function create_fragment$8(ctx) {
     	var t0, updating_active, t1, main, t2, t3, link, current;
 
@@ -1303,15 +1370,7 @@ var app = (function () {
 
     	add_binding_callback(() => bind(sidebar, 'active', sidebar_active_binding));
 
-    	var switch_value = ctx.active.component;
-
-    	function switch_props(ctx) {
-    		return { $$inline: true };
-    	}
-
-    	if (switch_value) {
-    		var switch_instance = new switch_value(switch_props());
-    	}
+    	var if_block = (ctx.active.component) && create_if_block$1(ctx);
 
     	var footer = new Footer({ $$inline: true });
 
@@ -1322,17 +1381,17 @@ var app = (function () {
     			sidebar.$$.fragment.c();
     			t1 = space();
     			main = element("main");
-    			if (switch_instance) switch_instance.$$.fragment.c();
+    			if (if_block) if_block.c();
     			t2 = space();
     			footer.$$.fragment.c();
     			t3 = space();
     			link = element("link");
     			main.id = "main";
     			main.className = "flex-center round";
-    			add_location(main, file$8, 37, 0, 831);
+    			add_location(main, file$8, 36, 0, 830);
     			link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css";
     			link.rel = "stylesheet";
-    			add_location(link, file$8, 44, 1, 980);
+    			add_location(link, file$8, 45, 1, 1011);
     		},
 
     		l: function claim(nodes) {
@@ -1345,11 +1404,7 @@ var app = (function () {
     			mount_component(sidebar, target, anchor);
     			insert(target, t1, anchor);
     			insert(target, main, anchor);
-
-    			if (switch_instance) {
-    				mount_component(switch_instance, main, null);
-    			}
-
+    			if (if_block) if_block.m(main, null);
     			insert(target, t2, anchor);
     			mount_component(footer, target, anchor);
     			insert(target, t3, anchor);
@@ -1371,26 +1426,25 @@ var app = (function () {
     			}
     			sidebar.$set(sidebar_changes);
 
-    			if (switch_value !== (switch_value = ctx.active.component)) {
-    				if (switch_instance) {
-    					group_outros();
-    					const old_component = switch_instance;
-    					on_outro(() => {
-    						old_component.$destroy();
-    					});
-    					old_component.$$.fragment.o(1);
-    					check_outros();
-    				}
-
-    				if (switch_value) {
-    					switch_instance = new switch_value(switch_props());
-
-    					switch_instance.$$.fragment.c();
-    					switch_instance.$$.fragment.i(1);
-    					mount_component(switch_instance, main, null);
+    			if (ctx.active.component) {
+    				if (if_block) {
+    					if_block.p(changed, ctx);
+    					if_block.i(1);
     				} else {
-    					switch_instance = null;
+    					if_block = create_if_block$1(ctx);
+    					if_block.c();
+    					if_block.i(1);
+    					if_block.m(main, null);
     				}
+    			} else if (if_block) {
+    				group_outros();
+    				on_outro(() => {
+    					if_block.d(1);
+    					if_block = null;
+    				});
+
+    				if_block.o(1);
+    				check_outros();
     			}
     		},
 
@@ -1400,7 +1454,7 @@ var app = (function () {
 
     			sidebar.$$.fragment.i(local);
 
-    			if (switch_instance) switch_instance.$$.fragment.i(local);
+    			if (if_block) if_block.i();
 
     			footer.$$.fragment.i(local);
 
@@ -1410,7 +1464,7 @@ var app = (function () {
     		o: function outro(local) {
     			navbar.$$.fragment.o(local);
     			sidebar.$$.fragment.o(local);
-    			if (switch_instance) switch_instance.$$.fragment.o(local);
+    			if (if_block) if_block.o();
     			footer.$$.fragment.o(local);
     			current = false;
     		},
@@ -1429,7 +1483,7 @@ var app = (function () {
     				detach(main);
     			}
 
-    			if (switch_instance) switch_instance.$destroy();
+    			if (if_block) if_block.d();
 
     			if (detaching) {
     				detach(t2);
@@ -1450,7 +1504,6 @@ var app = (function () {
     	
 
     	let { sidebarMini, sidebarShow } = $$props;
-
     	let pages = routes;
     	let active = pages[0];
 
