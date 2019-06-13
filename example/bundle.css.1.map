@@ -1,0 +1,14 @@
+{
+  "version": 3,
+  "file": "bundle.css",
+  "sources": [
+    "..\\src\\Navbar.svelte",
+    "..\\src\\Sidebar.svelte"
+  ],
+  "sourcesContent": [
+    "<header id=\"top\" class=\"bg-primary fg-light flex-row\">\n  <slot />\n  <nav class=\"flex-row\">\n  {#each items as item}\n    <a class=\"fg-light\" href={item.to}>{item.name}</a>\n  {/each}\n  </nav>\n</header>\n\n<script>\n  export let items;\n</script>\n\n<style>\n  header {\n    padding: 0 1rem; \n    font-weight: bold\n  }\n  a {\n    padding: 1rem;\n  }\n  a:hover {\n    background: var(--color-light);\n    color: var(--color-primary);\n  }\n  :global(span) {\n    padding: .5rem;\n    font-size: 1.25rem;\n    cursor: pointer;\n  }\n</style>",
+    "{#if show}\n<aside id=\"left\" class:mini class=\"flex-col bg-grey shadow\">\n  {#each links as link}\n    <a on:click|preventDefault={() => active = link} class:active={link == active} class=\"flex-row round\" href={link.to} alt={link.name}>\n      <span class=\"fas fa-{link.icon}\"></span>\n      {#if !mini}\n        {link.name}\n      {/if}\n    </a>\n  {/each}\n</aside>\n{/if}\n<svelte:window on:popstate={handlePopstate}/>\n<script>\n  export let mini = true;\n  export let show = true;\n  export let links;\n  export let active;\n  $: {\n    self.history.pushState({}, active.name, active.to)\n  }\n  function handlePopstate(e){\n    active = links.find(l => l.to == e.path[0].location.pathname)\n  }\n</script>\n\n<style>\n  aside {\n    border: 1px solid var(--color-grey); \n    padding: 4px;\n  }\n  a {\n    font-weight: bold;\n    color: var(--color-dark);\n    padding: .75rem .75rem;\n    justify-content: flex-start;\n  }\n  a:hover {\n    background: var(--color-light);\n  }\n  .active {\n    color: var(--color-primary);\n  }\n  .mini {\n    max-width: 100px;\n  }\n  span {\n    color: var(--dark); \n    padding: .75rem;\n  }\n</style>"
+  ],
+  "names": [],
+  "mappings": "AAcE,MAAM,eAAC,CAAC,AACN,OAAO,CAAE,CAAC,CAAC,IAAI,CACf,WAAW,CAAE,IAAI;EACnB,CAAC,AACD,CAAC,eAAC,CAAC,AACD,OAAO,CAAE,IAAI,AACf,CAAC,AACD,gBAAC,MAAM,AAAC,CAAC,AACP,UAAU,CAAE,IAAI,aAAa,CAAC,CAC9B,KAAK,CAAE,IAAI,eAAe,CAAC,AAC7B,CAAC,AACO,IAAI,AAAE,CAAC,AACb,OAAO,CAAE,KAAK,CACd,SAAS,CAAE,OAAO,CAClB,MAAM,CAAE,OAAO,AACjB,CAAC;ACFD,KAAK,eAAC,CAAC,AACL,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,IAAI,YAAY,CAAC,CACnC,OAAO,CAAE,GAAG,AACd,CAAC,AACD,CAAC,eAAC,CAAC,AACD,WAAW,CAAE,IAAI,CACjB,KAAK,CAAE,IAAI,YAAY,CAAC,CACxB,OAAO,CAAE,MAAM,CAAC,MAAM,CACtB,eAAe,CAAE,UAAU,AAC7B,CAAC,AACD,gBAAC,MAAM,AAAC,CAAC,AACP,UAAU,CAAE,IAAI,aAAa,CAAC,AAChC,CAAC,AACD,OAAO,eAAC,CAAC,AACP,KAAK,CAAE,IAAI,eAAe,CAAC,AAC7B,CAAC,AACD,KAAK,eAAC,CAAC,AACL,SAAS,CAAE,KAAK,AAClB,CAAC,AACD,IAAI,eAAC,CAAC,AACJ,KAAK,CAAE,IAAI,MAAM,CAAC,CAClB,OAAO,CAAE,MAAM,AACjB,CAAC"
+}
