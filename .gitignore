@@ -1,4 +1,3 @@
 .DS_Store
 node_modules
-# including bundles for github pages demo
-# public/bundle.*
+public/bundle.*
