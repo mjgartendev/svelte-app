@@ -78,6 +78,13 @@ var app = (function () {
         node.addEventListener(event, handler, options);
         return () => node.removeEventListener(event, handler, options);
     }
+    function prevent_default(fn) {
+        return function (event) {
+            event.preventDefault();
+            // @ts-ignore
+            return fn.call(this, event);
+        };
+    }
     function attr(node, attribute, value) {
         if (value == null)
             node.removeAttribute(attribute);
@@ -100,15 +107,6 @@ var app = (function () {
     function set_current_component(component) {
         current_component = component;
     }
-    // TODO figure out if we still want to support
-    // shorthand events, or if we want to implement
-    // a real bubbling mechanism
-    function bubble(component, event) {
-        const callbacks = component.$$.callbacks[event.type];
-        if (callbacks) {
-            callbacks.slice().forEach(fn => fn(event));
-        }
-    }
 
     const dirty_components = [];
     const resolved_promise = Promise.resolve();
@@ -122,8 +120,14 @@ var app = (function () {
             resolved_promise.then(flush);
         }
     }
+    function add_binding_callback(fn) {
+        binding_callbacks.push(fn);
+    }
     function add_render_callback(fn) {
         render_callbacks.push(fn);
+    }
+    function add_flush_callback(fn) {
+        flush_callbacks.push(fn);
     }
     function flush() {
         const seen_callbacks = new Set();
@@ -177,6 +181,13 @@ var app = (function () {
     }
     function on_outro(callback) {
         outros.callbacks.push(callback);
+    }
+
+    function bind(component, name, callback) {
+        if (component.$$.props.indexOf(name) === -1)
+            return;
+        component.$$.bound[name] = callback;
+        callback(component.$$.ctx[name]);
     }
     function mount_component(component, target, anchor) {
         const { fragment, on_mount, on_destroy, after_render } = component.$$;
@@ -605,6 +616,10 @@ var app = (function () {
 
     	var if_block = (!ctx.mini) && create_if_block_1(ctx);
 
+    	function click_handler() {
+    		return ctx.click_handler(ctx);
+    	}
+
     	return {
     		c: function create() {
     			a = element("a");
@@ -613,13 +628,13 @@ var app = (function () {
     			if (if_block) if_block.c();
     			t1 = space();
     			span.className = span_class_value = "fas fa-" + ctx.link.icon + " svelte-1bhtahh";
-    			add_location(span, file$1, 4, 6, 206);
+    			add_location(span, file$1, 4, 6, 240);
     			a.className = "flex-row round svelte-1bhtahh";
     			a.href = a_href_value = ctx.link.to;
     			attr(a, "alt", a_alt_value = ctx.link.name);
-    			toggle_class(a, "active", ctx.link.to == ctx.active);
+    			toggle_class(a, "active", ctx.link == ctx.active);
     			add_location(a, file$1, 3, 4, 100);
-    			dispose = listen(a, "click", ctx.click_handler);
+    			dispose = listen(a, "click", prevent_default(click_handler));
     		},
 
     		m: function mount(target, anchor) {
@@ -630,7 +645,8 @@ var app = (function () {
     			append(a, t1);
     		},
 
-    		p: function update(changed, ctx) {
+    		p: function update(changed, new_ctx) {
+    			ctx = new_ctx;
     			if ((changed.links) && span_class_value !== (span_class_value = "fas fa-" + ctx.link.icon + " svelte-1bhtahh")) {
     				span.className = span_class_value;
     			}
@@ -657,7 +673,7 @@ var app = (function () {
     			}
 
     			if ((changed.links || changed.active)) {
-    				toggle_class(a, "active", ctx.link.to == ctx.active);
+    				toggle_class(a, "active", ctx.link == ctx.active);
     			}
     		},
 
@@ -673,7 +689,7 @@ var app = (function () {
     }
 
     function create_fragment$1(ctx) {
-    	var if_block_anchor;
+    	var if_block_anchor, dispose;
 
     	var if_block = (ctx.show) && create_if_block(ctx);
 
@@ -681,6 +697,10 @@ var app = (function () {
     		c: function create() {
     			if (if_block) if_block.c();
     			if_block_anchor = empty();
+    			dispose = [
+    				listen(window, "load", ctx.handleLoad),
+    				listen(window, "popstate", prevent_default(ctx.handlePopstate))
+    			];
     		},
 
     		l: function claim(nodes) {
@@ -716,61 +736,70 @@ var app = (function () {
     			if (detaching) {
     				detach(if_block_anchor);
     			}
+
+    			run_all(dispose);
     		}
     	};
     }
 
     function instance$1($$self, $$props, $$invalidate) {
-    	let { active, links, mini = true, show = true } = $$props;
+    	let { mini = true, show = true, links, active } = $$props;
+      function handleLoad(e){
+        $$invalidate('active', active = links.find(l => l.to == e.path[0].location.pathname));
+      }
+      function handlePopstate(e){
+        $$invalidate('active', active = links.find(l => l.to == e.state));
+      }
 
-    	const writable_props = ['active', 'links', 'mini', 'show'];
+    	const writable_props = ['mini', 'show', 'links', 'active'];
     	Object.keys($$props).forEach(key => {
     		if (!writable_props.includes(key) && !key.startsWith('$$')) console.warn(`<Sidebar> was created with unknown prop '${key}'`);
     	});
 
-    	function click_handler(event) {
-    		bubble($$self, event);
+    	function click_handler({ link }) {
+    		const $$result = active = link;
+    		$$invalidate('active', active);
+    		return $$result;
     	}
 
     	$$self.$set = $$props => {
-    		if ('active' in $$props) $$invalidate('active', active = $$props.active);
-    		if ('links' in $$props) $$invalidate('links', links = $$props.links);
     		if ('mini' in $$props) $$invalidate('mini', mini = $$props.mini);
     		if ('show' in $$props) $$invalidate('show', show = $$props.show);
+    		if ('links' in $$props) $$invalidate('links', links = $$props.links);
+    		if ('active' in $$props) $$invalidate('active', active = $$props.active);
     	};
 
-    	return { active, links, mini, show, click_handler };
+    	$$self.$$.update = ($$dirty = { active: 1 }) => {
+    		if ($$dirty.active) { {
+            console.log(active);
+            self.history.pushState({}, active.name, active.to);
+          } }
+    	};
+
+    	return {
+    		mini,
+    		show,
+    		links,
+    		active,
+    		handleLoad,
+    		handlePopstate,
+    		click_handler
+    	};
     }
 
     class Sidebar extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$1, create_fragment$1, safe_not_equal, ["active", "links", "mini", "show"]);
+    		init(this, options, instance$1, create_fragment$1, safe_not_equal, ["mini", "show", "links", "active"]);
 
     		const { ctx } = this.$$;
     		const props = options.props || {};
-    		if (ctx.active === undefined && !('active' in props)) {
-    			console.warn("<Sidebar> was created without expected prop 'active'");
-    		}
     		if (ctx.links === undefined && !('links' in props)) {
     			console.warn("<Sidebar> was created without expected prop 'links'");
     		}
-    	}
-
-    	get active() {
-    		throw new Error("<Sidebar>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set active(value) {
-    		throw new Error("<Sidebar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	get links() {
-    		throw new Error("<Sidebar>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
-    	}
-
-    	set links(value) {
-    		throw new Error("<Sidebar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    		if (ctx.active === undefined && !('active' in props)) {
+    			console.warn("<Sidebar> was created without expected prop 'active'");
+    		}
     	}
 
     	get mini() {
@@ -786,6 +815,22 @@ var app = (function () {
     	}
 
     	set show(value) {
+    		throw new Error("<Sidebar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get links() {
+    		throw new Error("<Sidebar>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set links(value) {
+    		throw new Error("<Sidebar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	get active() {
+    		throw new Error("<Sidebar>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set active(value) {
     		throw new Error("<Sidebar>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
@@ -1107,7 +1152,7 @@ var app = (function () {
 
     const file$8 = "src\\App.svelte";
 
-    // (32:2) {:else}
+    // (25:2) {:else}
     function create_else_block(ctx) {
     	var span, dispose;
 
@@ -1115,7 +1160,7 @@ var app = (function () {
     		c: function create() {
     			span = element("span");
     			span.className = "fas fa-angle-left";
-    			add_location(span, file$8, 32, 3, 883);
+    			add_location(span, file$8, 25, 3, 615);
     			dispose = listen(span, "click", ctx.click_handler_2);
     		},
 
@@ -1133,7 +1178,7 @@ var app = (function () {
     	};
     }
 
-    // (30:2) {#if sidebarMini}
+    // (23:2) {#if sidebarMini}
     function create_if_block$1(ctx) {
     	var span, dispose;
 
@@ -1141,7 +1186,7 @@ var app = (function () {
     		c: function create() {
     			span = element("span");
     			span.className = "fas fa-angle-right";
-    			add_location(span, file$8, 30, 3, 792);
+    			add_location(span, file$8, 23, 3, 524);
     			dispose = listen(span, "click", ctx.click_handler_1);
     		},
 
@@ -1159,7 +1204,7 @@ var app = (function () {
     	};
     }
 
-    // (22:0) <Navbar   items={[   {name: "home", to: "."},   {name: "docs", to: "docs"},   {name: "blog", to: "blog"} ]}>
+    // (15:0) <Navbar   items={[   {name: "home", to: "."},   {name: "docs", to: "docs"},   {name: "blog", to: "blog"} ]}>
     function create_default_slot(ctx) {
     	var div, span0, t0, t1, span1, dispose;
 
@@ -1181,9 +1226,9 @@ var app = (function () {
     			span1 = element("span");
     			span1.textContent = "Svelte Template";
     			span0.className = "fas fa-bars";
-    			add_location(span0, file$8, 28, 2, 692);
-    			add_location(div, file$8, 27, 1, 684);
-    			add_location(span1, file$8, 35, 1, 976);
+    			add_location(span0, file$8, 21, 2, 424);
+    			add_location(div, file$8, 20, 1, 416);
+    			add_location(span1, file$8, 28, 1, 708);
     			dispose = listen(span0, "click", ctx.click_handler);
     		},
 
@@ -1225,7 +1270,7 @@ var app = (function () {
     }
 
     function create_fragment$8(ctx) {
-    	var t0, t1, main, t2, t3, link, current;
+    	var t0, updating_active, t1, main, t2, t3, link, current;
 
     	var navbar = new Navbar({
     		props: {
@@ -1240,18 +1285,25 @@ var app = (function () {
     		$$inline: true
     	});
 
-    	var sidebar = new Sidebar({
-    		props: {
+    	function sidebar_active_binding(value) {
+    		ctx.sidebar_active_binding.call(null, value);
+    		updating_active = true;
+    		add_flush_callback(() => updating_active = false);
+    	}
+
+    	let sidebar_props = {
     		mini: ctx.sidebarMini,
     		show: ctx.sidebarShow,
-    		active: ctx.path,
     		links: ctx.pages
-    	},
-    		$$inline: true
-    	});
-    	sidebar.$on("click", ctx.handleLinkClick);
+    	};
+    	if (ctx.active !== void 0) {
+    		sidebar_props.active = ctx.active;
+    	}
+    	var sidebar = new Sidebar({ props: sidebar_props, $$inline: true });
 
-    	var switch_value = ctx.activePage.component;
+    	add_binding_callback(() => bind(sidebar, 'active', sidebar_active_binding));
+
+    	var switch_value = ctx.active.component;
 
     	function switch_props(ctx) {
     		return { $$inline: true };
@@ -1277,10 +1329,10 @@ var app = (function () {
     			link = element("link");
     			main.id = "main";
     			main.className = "flex-center round";
-    			add_location(main, file$8, 44, 0, 1129);
+    			add_location(main, file$8, 37, 0, 831);
     			link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css";
     			link.rel = "stylesheet";
-    			add_location(link, file$8, 51, 1, 1282);
+    			add_location(link, file$8, 44, 1, 980);
     		},
 
     		l: function claim(nodes) {
@@ -1313,11 +1365,13 @@ var app = (function () {
     			var sidebar_changes = {};
     			if (changed.sidebarMini) sidebar_changes.mini = ctx.sidebarMini;
     			if (changed.sidebarShow) sidebar_changes.show = ctx.sidebarShow;
-    			if (changed.path) sidebar_changes.active = ctx.path;
     			if (changed.pages) sidebar_changes.links = ctx.pages;
+    			if (!updating_active && changed.active) {
+    				sidebar_changes.active = ctx.active;
+    			}
     			sidebar.$set(sidebar_changes);
 
-    			if (switch_value !== (switch_value = ctx.activePage.component)) {
+    			if (switch_value !== (switch_value = ctx.active.component)) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -1398,13 +1452,7 @@ var app = (function () {
     	let { sidebarMini, sidebarShow } = $$props;
 
     	let pages = routes;
-    	let path = "home";
-    	function handleLinkClick(e) {
-    		e.preventDefault();
-    		let to = new URL(e.path[1].href || e.target.href || location.pathname);
-    		$$invalidate('path', path = to.pathname);
-    		history.pushState(to.toJSON(), to.pathname, to.pathname);
-    	}
+    	let active = pages[0];
 
     	const writable_props = ['sidebarMini', 'sidebarShow'];
     	Object.keys($$props).forEach(key => {
@@ -1429,27 +1477,25 @@ var app = (function () {
     		return $$result;
     	}
 
+    	function sidebar_active_binding(value) {
+    		active = value;
+    		$$invalidate('active', active);
+    	}
+
     	$$self.$set = $$props => {
     		if ('sidebarMini' in $$props) $$invalidate('sidebarMini', sidebarMini = $$props.sidebarMini);
     		if ('sidebarShow' in $$props) $$invalidate('sidebarShow', sidebarShow = $$props.sidebarShow);
-    	};
-
-    	let activePage;
-
-    	$$self.$$.update = ($$dirty = { pages: 1, path: 1 }) => {
-    		if ($$dirty.pages || $$dirty.path) { $$invalidate('activePage', activePage = pages.find(p => p.to == path) || pages[0]); }
     	};
 
     	return {
     		sidebarMini,
     		sidebarShow,
     		pages,
-    		path,
-    		handleLinkClick,
-    		activePage,
+    		active,
     		click_handler,
     		click_handler_1,
-    		click_handler_2
+    		click_handler_2,
+    		sidebar_active_binding
     	};
     }
 

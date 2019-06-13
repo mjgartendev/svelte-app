@@ -7,16 +7,8 @@ import {onMount} from 'svelte';
 
 	export let sidebarMini;
 	export let sidebarShow;
-
 	let pages = routes;
-	let path = "home";
-	$: activePage = pages.find(p => p.to == path) || pages[0];
-	function handleLinkClick(e) {
-		e.preventDefault();
-		let to = new URL(e.path[1].href || e.target.href || location.pathname);
-		path = to.pathname;
-		history.pushState(to.toJSON(), to.pathname, to.pathname);
-	}
+	let active = pages[0];
 </script>
 
 <Navbar 
@@ -36,14 +28,14 @@ import {onMount} from 'svelte';
 	<span>Svelte Template</span>
 </Navbar>	
 
-<Sidebar on:click={handleLinkClick} 
+<Sidebar
+	bind:active
 	mini={sidebarMini}	
 	show={sidebarShow} 
-	active={path}
 	links={pages}/>
 
 <main id="main" class="flex-center round">
-	<svelte:component this={activePage.component}></svelte:component>
+	<svelte:component this={active.component}></svelte:component>
 </main>
 
 <Footer></Footer>
